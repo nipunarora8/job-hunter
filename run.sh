@@ -13,7 +13,7 @@ echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━�
 
 # ── Init DB ──
 echo -e "\n${YELLOW}▸ Initializing database...${NC}"
-python db.py
+uv run python db.py
 
 mkdir -p logs
 
@@ -27,13 +27,13 @@ trap cleanup EXIT INT TERM
 
 # ── Start scheduler (scrapes + analyzes daily at 8am, runs once on startup) ──
 echo -e "${YELLOW}▸ Starting scheduler (initial scrape running in background)...${NC}"
-python scheduler.py > logs/scheduler.log 2>&1 &
+uv run python scheduler.py > logs/scheduler.log 2>&1 &
 SCHEDULER_PID=$!
 echo -e "${GREEN}✓ Scheduler PID $SCHEDULER_PID${NC}"
 
 # ── Start API ──
 echo -e "${YELLOW}▸ Starting API server...${NC}"
-python api.py > logs/api.log 2>&1 &
+uv run python api.py > logs/api.log 2>&1 &
 API_PID=$!
 sleep 2
 
