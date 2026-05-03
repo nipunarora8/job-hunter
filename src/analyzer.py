@@ -46,13 +46,11 @@ def _extract_json(text: str) -> dict | None:
 
 def analyze_job(job: dict) -> dict | None:
     text = f"Title: {job['title']}\nCompany: {job['company']}\nDescription: {job['description'][:3000]}"
+
     try:
         r = httpx.post(
             "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {config.OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            headers={"Authorization": f"Bearer {config.OPENROUTER_API_KEY}", "Content-Type": "application/json"},
             json={
                 "model": config.OPENROUTER_MODEL,
                 "max_tokens": 300,

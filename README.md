@@ -61,9 +61,9 @@ All user-facing settings live in `user_config.yaml`:
 
 ### Free models
 
-The default model is `meta-llama/llama-3.1-8b-instruct:free`. Other free options:
+- `openrouter/free` (default — auto-routes to available free models)
+- `meta-llama/llama-3.1-8b-instruct:free`
 - `mistralai/mistral-7b-instruct:free`
-- `google/gemma-2-9b-it:free`
 
 Full list: https://openrouter.ai/models?q=free
 
