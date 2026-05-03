@@ -4,13 +4,15 @@ import httpx
 import config
 from db import get_pending_analysis, save_analysis, delete_job
 
+_job_types_str = ", ".join(config.JOB_TYPES)
+
 SYSTEM_PROMPT = f"""You are a job relevance analyzer. Analyze the job and respond with ONLY a JSON object — no markdown, no explanation, no extra text.
 
 Candidate profile:
 {config.PROFILE_SUMMARY}
 
 Respond with exactly this JSON structure:
-{{"german_required": true/false/null, "relevance_score": <1-10>, "matched_skills": ["skill1", "skill2"], "reasoning": "one sentence"}}
+{{"german_required": true/false/null, "job_type": "full_time/part_time/contract/internship/werkstudent/freelance/unknown", "relevance_score": <1-10>, "matched_skills": ["skill1", "skill2"], "reasoning": "one sentence"}}
 
 Rules for german_required:
 - true: job explicitly requires German language skills. Triggers:
@@ -22,6 +24,15 @@ Rules for german_required:
 - null: unclear, description is missing or too short to determine
 - IMPORTANT: A job description written IN German does NOT by itself mean German is required
 - IMPORTANT: If the JD says "Deutsch und Englisch beherrschst du fließend" → german_required = true
+
+Rules for job_type:
+- full_time: permanent full-time position (Festanstellung, Vollzeit)
+- part_time: permanent part-time position (Teilzeit)
+- contract: fixed-term contract or project-based
+- internship: Praktikum, internship
+- werkstudent: Werkstudent / working student position
+- freelance: freelance or self-employed
+- unknown: not mentioned in the description
 
 Rules for relevance_score:
 - 8-10: strong match, most required skills align with candidate profile
@@ -73,7 +84,6 @@ def analyze_job(job: dict) -> dict | None:
 def run_analysis(limit=50):
     jobs = get_pending_analysis(limit)
     if not jobs:
-        print("No pending jobs to analyze")
         return
     print(f"Analyzing {len(jobs)} jobs...")
     kept = discarded = errors = 0
@@ -84,7 +94,15 @@ def run_analysis(limit=50):
             continue
         german_required = result.get("german_required")
         score = int(result.get("relevance_score", 0))
-        if german_required is True or score < config.MIN_RELEVANCE_SCORE:
+        job_type = result.get("job_type", "unknown")
+
+        # Discard if wrong job type (only when clearly identified — unknown passes through)
+        type_mismatch = (
+            job_type != "unknown"
+            and job_type not in config.JOB_TYPES
+        )
+
+        if german_required is True or score < config.MIN_RELEVANCE_SCORE or type_mismatch:
             delete_job(job["slug"])
             discarded += 1
             continue

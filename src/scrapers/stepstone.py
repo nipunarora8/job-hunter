@@ -27,17 +27,24 @@ async def scrape_async() -> int:
                     await page.goto(BASE + params, wait_until="domcontentloaded", timeout=30000)
                     await page.wait_for_timeout(2000)
 
+                    # Try multiple card selectors — StepStone updates their DOM regularly
                     cards = await page.query_selector_all("article[data-testid='job-item']")
                     if not cards:
+                        cards = await page.query_selector_all("[data-genesis-element='BASE_JOB_CARD']")
+                    if not cards:
+                        cards = await page.query_selector_all("article.sc-jTzLTM, article[class*='JobCard']")
+                    if not cards:
+                        print(f"  stepstone: no cards found for '{keyword}' p{page_num}")
                         await page.close()
                         break
 
                     for card in cards:
                         try:
-                            title_el   = await card.query_selector("[data-at='job-item-title']")
-                            company_el = await card.query_selector("[data-at='job-item-company-name']")
-                            loc_el     = await card.query_selector("[data-at='job-item-location']")
-                            link_el    = await card.query_selector("a[data-at='job-item-title']")
+                            # Title: try data-at first, then h2/h3
+                            title_el   = await card.query_selector("[data-at='job-item-title'], h2 a, h3 a, [data-genesis-element='JOB_TITLE']")
+                            company_el = await card.query_selector("[data-at='job-item-company-name'], [data-genesis-element='COMPANY_NAME'], [class*='company']")
+                            loc_el     = await card.query_selector("[data-at='job-item-location'], [data-genesis-element='LOCATION'], [class*='location']")
+                            link_el    = await card.query_selector("a[data-at='job-item-title'], a[href*='/stellenangebote/'], a[href*='/job/']")
 
                             title   = (await title_el.inner_text()).strip()   if title_el   else ""
                             company = (await company_el.inner_text()).strip() if company_el else ""
@@ -52,13 +59,19 @@ async def scrape_async() -> int:
                             if job_exists(slug):
                                 continue
 
-                            # Fetch description
+                            # Fetch description with multiple selector fallbacks
                             description = ""
                             try:
                                 jpage = await ctx.new_page()
                                 await jpage.goto(full_url, wait_until="domcontentloaded", timeout=20000)
-                                await jpage.wait_for_timeout(1200)
-                                desc_el = await jpage.query_selector("[data-at='section-text-description-content']")
+                                await jpage.wait_for_timeout(1500)
+                                desc_el = await jpage.query_selector(
+                                    "[data-at='section-text-description-content'], "
+                                    "[data-genesis-element='JOB_DESCRIPTION'], "
+                                    ".job-ad-display__content, "
+                                    "[class*='JobDescription'], "
+                                    "article[class*='description']"
+                                )
                                 if desc_el:
                                     description = (await desc_el.inner_text()).strip()
                                 await jpage.close()

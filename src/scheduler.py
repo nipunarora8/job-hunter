@@ -1,8 +1,6 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
-import time
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -34,29 +32,8 @@ def run_scrapers():
                 print(f"{name} FAILED: {e}")
     print("All scrapers done.")
 
-def analyzer_loop(stop_event: threading.Event, poll_interval: int = 10):
-    from analyzer import run_analysis
-    print("Analyzer loop started — polling every {poll_interval}s for pending jobs...")
-    while not stop_event.is_set():
-        run_analysis(limit=50)
-        stop_event.wait(poll_interval)
-    # Final drain after scrapers finish
-    run_analysis(limit=2000)
-    print("Analyzer loop done.")
-
 def run_all():
-    stop_event = threading.Event()
-
-    # Start analyzer polling in background
-    analyzer_thread = threading.Thread(target=analyzer_loop, args=(stop_event,), daemon=True)
-    analyzer_thread.start()
-
-    # Run all scrapers in parallel (blocking until all done)
     run_scrapers()
-
-    # Signal analyzer to stop after one final pass
-    stop_event.set()
-    analyzer_thread.join(timeout=120)
     print("run_all complete.")
 
 if __name__ == "__main__":

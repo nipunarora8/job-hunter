@@ -13,6 +13,11 @@ openrouter_model: "openrouter/free"
 # Jobs with a relevance score below this are discarded entirely (1-10 scale).
 min_relevance_score: 4
 
+# Job types to include. Jobs that are clearly a different type are discarded.
+# Options: full_time, part_time, contract, internship, werkstudent, freelance
+job_types:
+  - full_time
+
 # Keywords used to search job boards.
 search_keywords:
   - "AI Engineer"

@@ -1,4 +1,5 @@
 import os
+import threading
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -6,6 +7,19 @@ from pydantic import BaseModel
 import db
 
 app = FastAPI()
+
+def _analyzer_background_loop(poll_interval: int = 15):
+    from analyzer import run_analysis
+    print("Analyzer background loop started — polling every 15s...")
+    while True:
+        try:
+            run_analysis(limit=50)
+        except Exception as e:
+            print(f"Analyzer loop error: {e}")
+        threading.Event().wait(poll_interval)
+
+_analyzer_thread = threading.Thread(target=_analyzer_background_loop, daemon=True)
+_analyzer_thread.start()
 
 
 @app.get("/api/stats")
@@ -47,28 +61,11 @@ def list_jobs_paginated(status: str = None, min_score: int = None, source: str =
     offset = (page - 1) * per_page
     return {"total": total, "page": page, "per_page": per_page, "jobs": all_jobs[offset:offset+per_page]}
 
-@app.post("/api/run-analysis")
-def run_analysis_endpoint():
-    import threading
-    def _run():
-        from analyzer import run_analysis
-        run_analysis(limit=100)
-    threading.Thread(target=_run, daemon=True).start()
-    return {"ok": True, "message": "Analysis started in background"}
-
 @app.post("/api/run-scraper")
 def run_scraper():
-    import threading
     def _run():
-        from scrapers.arbeitnow import scrape as s1
-        from scrapers.bundesagentur import scrape as s2
-        from scrapers.indeed import scrape as s3
-        from scrapers.linkedin import scrape as s4
-        from scrapers.stepstone import scrape as s5
-        from analyzer import run_analysis
-        n = s1() + s2() + s3() + s4() + s5()
-        print(f"Scraped {n} new jobs total")
-        run_analysis()
+        from scheduler import run_scrapers
+        run_scrapers()
     threading.Thread(target=_run, daemon=True).start()
     return {"ok": True, "message": "Scraper started in background"}
 

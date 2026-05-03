@@ -56,6 +56,7 @@ All user-facing settings live in `user_config.yaml`:
 |---|---|
 | `openrouter_model` | LLM model for analysis. Use a `:free` model to stay on the free tier. |
 | `min_relevance_score` | Jobs scoring below this (1–10) are discarded. Default: 4 |
+| `job_types` | Job types to include. Options: `full_time`, `part_time`, `contract`, `internship`, `werkstudent`, `freelance`. Default: `[full_time]` |
 | `search_keywords` | Keywords sent to each job board. |
 | `profile` | Your skills/experience summary — used by the LLM to score jobs. |
 
