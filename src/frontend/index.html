@@ -735,7 +735,7 @@ main {
               Remote
             </span>
             <span class="meta-tag source-tag" :class="'src-'+job.source" x-text="job.source"></span>
-            <span class="meta-tag date-tag">
+            <span class="meta-tag date-tag" x-show="relativeDate(job.posted || job.created_at)">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span x-text="relativeDate(job.posted || job.created_at)"></span>
             </span>
@@ -915,10 +915,19 @@ function app() {
     },
 
     relativeDate(dateStr) {
-      if (!dateStr) return '';
-      const date = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
+      if (!dateStr || !dateStr.trim()) return '';
+      let date;
+      if (dateStr.includes('T')) {
+        date = new Date(dateStr);
+      } else if (dateStr.includes(' ')) {
+        date = new Date(dateStr.replace(' ', 'T') + 'Z'); // SQLite datetime — UTC
+      } else {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        date = new Date(y, m - 1, d); // date-only — local to avoid timezone shift
+      }
+      if (isNaN(date.getTime())) return '';
       const days = Math.floor((Date.now() - date) / 86400000);
-      if (days === 0) return 'Today';
+      if (days <= 0) return 'Today';
       if (days === 1) return 'Yesterday';
       if (days < 7) return days + 'd ago';
       if (days < 30) return Math.floor(days / 7) + 'w ago';
