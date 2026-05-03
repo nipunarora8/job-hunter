@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+playwright
+apscheduler
+aiohttp
+feedparser
+python-dotenv

@@ -1,0 +1,21 @@
+# Environment
+.env
+
+# Database
+*.db
+
+# Logs
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# macOS
+.DS_Store
+
+# Claude
+.claude/
+memory/
