@@ -92,6 +92,23 @@ job-hunter/
     └── frontend/      # Alpine.js dashboard (no build step)
 ```
 
+## Running in the background (server / SSH)
+
+Use `screen` to keep it running after you disconnect from SSH:
+
+```bash
+screen -S jobhunter
+./run.sh
+```
+
+Detach with `Ctrl+A D` — the process keeps running. Reattach anytime:
+
+```bash
+screen -r jobhunter
+```
+
+To stop it, reattach and press `Ctrl+C`.
+
 ## Requirements
 
 - Python 3.11+
