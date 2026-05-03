@@ -5,11 +5,10 @@
 # ─────────────────────────────────────────────
 
 # OpenRouter model to use for job analysis.
-# Free models: "meta-llama/llama-3.1-8b-instruct:free"
-#              "mistralai/mistral-7b-instruct:free"
-#              "google/gemma-2-9b-it:free"
+# "openrouter/free" automatically routes to available free models.
+# You can also pin a specific free model, e.g. "meta-llama/llama-3.1-8b-instruct:free"
 # See full list: https://openrouter.ai/models?q=free
-openrouter_model: "meta-llama/llama-3.1-8b-instruct:free"
+openrouter_model: "openrouter/free"
 
 # Jobs with a relevance score below this are discarded entirely (1-10 scale).
 min_relevance_score: 4
