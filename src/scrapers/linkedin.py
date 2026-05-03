@@ -54,6 +54,7 @@ async def scrape_async() -> int:
 
                         # Fetch description from the public job page (no login needed)
                         description = ""
+                        posted = ""
                         if href:
                             try:
                                 jpage = await ctx.new_page()
@@ -63,6 +64,9 @@ async def scrape_async() -> int:
                                 desc_el = await jpage.query_selector(".description__text, .show-more-less-html__markup")
                                 if desc_el:
                                     description = (await desc_el.inner_text()).strip()
+                                date_el = await jpage.query_selector("time[datetime]")
+                                if date_el:
+                                    posted = (await date_el.get_attribute("datetime") or "")[:10]
                                 await jpage.close()
                             except Exception as e:
                                 print(f"  linkedin desc error: {e}")
@@ -75,7 +79,7 @@ async def scrape_async() -> int:
                             "remote": 1 if "remote" in location.lower() else 0,
                             "url": href.split("?")[0] if href else "",
                             "source": "linkedin",
-                            "posted": "",
+                            "posted": posted,
                             "salary": "",
                             "description": description,
                         })
