@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────
+#  Job Hunter — User Configuration
+#  Fork this repo and edit this file to make
+#  it work for your own job search.
+# ─────────────────────────────────────────────
+
+# OpenRouter model to use for job analysis.
+# Free models: "meta-llama/llama-3.1-8b-instruct:free"
+#              "mistralai/mistral-7b-instruct:free"
+#              "google/gemma-2-9b-it:free"
+# See full list: https://openrouter.ai/models?q=free
+openrouter_model: "meta-llama/llama-3.1-8b-instruct:free"
+
+# Jobs with a relevance score below this are discarded entirely (1-10 scale).
+min_relevance_score: 4
+
+# Keywords used to search job boards.
+search_keywords:
+  - "AI Engineer"
+  - "Machine Learning Engineer"
+  - "Software Engineer"
+  - "Computer Vision Engineer"
+  - "Robotics Software Engineer"
+  - "Agentic AI Engineer"
+  - "Perception Engineer"
+
+# Your profile — used by the LLM to score job relevance.
+# Write it as a short professional summary covering your skills,
+# experience, language abilities, and location preferences.
+profile: |
+  AI Engineer, 3.5 years at Max Planck Institute Berlin.
+  M.Sc. Artificial Intelligence, FAU Erlangen-Nürnberg (GPA 1.7).
+  Published EPJ Data Science, Springer Nature 2026.
+
+  Skills:
+  - AI & Deep Learning: PyTorch, Computer Vision, LLMs, Foundation Models (VLM/VLA),
+    LoRA fine-tuning, YOLOv8, SAM, multi-node multi-GPU distributed training on HPC.
+  - Agentic AI: LangGraph, LangChain, multi-agent pipelines, RAG (ChromaDB),
+    MCP, LLM tool calling, prompt engineering.
+  - Edge AI & Robotics: ROS2, NVIDIA DeepStream, GStreamer, ONNX,
+    Jetson Xavier/Nano, Raspberry Pi, Embodied AI, Autonomous Systems.
+  - Software: Python, C++, Docker, Git, CI/CD, FastAPI, HPC, MongoDB, AWS S3.
+
+  Languages: English C1, German beginner — needs English-friendly roles only.
+  Location: Open to all locations in Germany and remote.
