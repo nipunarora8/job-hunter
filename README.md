@@ -92,9 +92,9 @@ job-hunter/
     └── frontend/      # Alpine.js dashboard (no build step)
 ```
 
-## Running in the background (server / SSH)
+## Running in the background
 
-Use `screen` to keep it running after you disconnect from SSH:
+Use `screen` to keep it running after you close the terminal:
 
 ```bash
 screen -S jobhunter
