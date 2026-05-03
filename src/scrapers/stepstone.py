@@ -57,25 +57,21 @@ async def scrape_async() -> int:
                                 continue
 
                             raw_url = f"https://www.stepstone.de{href}" if href.startswith("/") else href
-                            # Strip -inline.html suffix — causes redirect race on first open
+                            # -inline.html works (no 403), canonical .html is for the user-facing link
+                            inline_url = raw_url if raw_url.endswith("-inline.html") else raw_url.replace(".html", "-inline.html")
                             full_url = raw_url.replace("-inline.html", ".html")
                             slug = make_slug("stepstone", full_url)
                             if job_exists(slug):
                                 continue
 
-                            # Fetch description with multiple selector fallbacks
+                            # Fetch description using inline URL (bypasses 403 on canonical URL)
                             description = ""
                             try:
                                 jpage = await ctx.new_page()
-                                await jpage.goto(full_url, wait_until="domcontentloaded", timeout=20000)
+                                await jpage.set_extra_http_headers({"Referer": page.url})
+                                await jpage.goto(inline_url, wait_until="domcontentloaded", timeout=20000)
                                 await jpage.wait_for_timeout(1500)
-                                desc_el = await jpage.query_selector(
-                                    "[data-at='section-text-description-content'], "
-                                    "[data-genesis-element='JOB_DESCRIPTION'], "
-                                    ".job-ad-display__content, "
-                                    "[class*='JobDescription'], "
-                                    "article[class*='description']"
-                                )
+                                desc_el = await jpage.query_selector("[data-at='section-text-description-content']")
                                 if desc_el:
                                     description = (await desc_el.inner_text()).strip()
                                 await jpage.close()
