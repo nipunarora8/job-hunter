@@ -16,7 +16,7 @@ class JobAnalysis(BaseModel):
     matched_skills: list[str] = Field(
         description="Short skill names from the job that match the candidate (e.g. ['PyTorch', 'ROS2']). Max 5 items."
     )
-    reasoning: str
+    reasoning: str = Field(description="One short sentence explaining the score.", max_length=200)
 
 
 _SCHEMA = {
@@ -69,8 +69,9 @@ def analyze_job(job: dict) -> JobAnalysis | None:
                 },
                 json={
                     "model": config.OPENROUTER_MODEL,
-                    "max_tokens": 1024,
+                    "max_tokens": 600,
                     "provider": {"allow_fallbacks": True},
+                    "reasoning": {"enabled": False},
                     "response_format": {"type": "json_schema", "json_schema": _SCHEMA},
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
