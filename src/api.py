@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -55,7 +56,7 @@ def run_scraper():
     threading.Thread(target=_run, daemon=True).start()
     return {"ok": True, "message": "Scraper started in background"}
 
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "frontend"), html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

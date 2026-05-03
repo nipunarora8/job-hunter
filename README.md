@@ -82,13 +82,14 @@ job-hunter/
 ├── .env               # API key (never committed)
 ├── run.sh             # start everything
 ├── setup.sh           # one-time setup
-├── api.py             # FastAPI backend
-├── db.py              # SQLite helpers
-├── analyzer.py        # LLM scoring
-├── scheduler.py       # daily scrape job
-├── config.py          # loads user_config.yaml + .env
-├── scrapers/          # one file per job board
-└── frontend/          # Alpine.js dashboard (no build step)
+└── src/
+    ├── api.py         # FastAPI backend
+    ├── db.py          # SQLite helpers
+    ├── analyzer.py    # LLM scoring
+    ├── scheduler.py   # daily scrape job
+    ├── config.py      # loads user_config.yaml + .env
+    ├── scrapers/      # one file per job board
+    └── frontend/      # Alpine.js dashboard (no build step)
 ```
 
 ## Requirements
