@@ -81,36 +81,40 @@ CATEGORY_KEYWORDS = {
 SENIOR_KEYWORDS = ["senior", "lead", "principal", "head of", "director", "vp ", "staff ",
                    "architect", "manager", "chief", "sr.", "sr "]
 
-def get_jobs(status=None, min_score=None, source=None, days=None, category=None, exclude_senior=False) -> list:
-    # german_required: show jobs where it's 0 (not required) or NULL (unclear) — only hide explicit 1
-    query = "SELECT * FROM jobs WHERE analyzed=1 AND (german_required IS NULL OR german_required != 1)"
+def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
+             exclude_senior=False, page=1, per_page=20) -> tuple[int, list]:
+    base = "WHERE analyzed=1 AND (german_required IS NULL OR german_required != 1)"
     params = []
     if status:
-        query += " AND status=?"
+        base += " AND status=?"
         params.append(status)
     if min_score:
-        query += " AND relevance_score>=?"
+        base += " AND relevance_score>=?"
         params.append(min_score)
     if source:
-        query += " AND source=?"
+        base += " AND source=?"
         params.append(source)
     if days:
-        # Filter on posted date when available, fall back to created_at
-        query += " AND COALESCE(NULLIF(posted,''), created_at) >= date('now', ?)"
+        base += " AND COALESCE(NULLIF(posted,''), created_at) >= date('now', ?)"
         params.append(f"-{days} days")
     if category and category in CATEGORY_KEYWORDS:
         kws = CATEGORY_KEYWORDS[category]
         conditions = " OR ".join(["lower(title) LIKE ?"] * len(kws))
-        query += f" AND ({conditions})"
+        base += f" AND ({conditions})"
         params.extend([f"%{kw}%" for kw in kws])
     if exclude_senior:
         for kw in SENIOR_KEYWORDS:
-            query += " AND lower(title) NOT LIKE ?"
+            base += " AND lower(title) NOT LIKE ?"
             params.append(f"%{kw}%")
-    query += " ORDER BY relevance_score DESC, created_at DESC"
+
     with get_conn() as conn:
-        rows = conn.execute(query, params).fetchall()
-        return [dict(r) for r in rows]
+        total = conn.execute(f"SELECT COUNT(*) FROM jobs {base}", params).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(
+            f"SELECT * FROM jobs {base} ORDER BY relevance_score DESC, created_at DESC LIMIT ? OFFSET ?",
+            params + [per_page, offset]
+        ).fetchall()
+        return total, [dict(r) for r in rows]
 
 def update_status(slug: str, status: str):
     with get_conn() as conn:

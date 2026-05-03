@@ -1,10 +1,32 @@
 import asyncio
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, BrowserContext
 from scrapers import make_slug
 from db import insert_job, job_exists
 from config import SEARCH_KEYWORDS
 
 BASE = "https://www.linkedin.com/jobs/search/"
+CONCURRENCY = 5  # parallel job page loads
+
+
+async def _fetch_job_detail(ctx: BrowserContext, href: str) -> tuple[str, str]:
+    """Returns (description, posted_date). Both empty string on failure."""
+    try:
+        jpage = await ctx.new_page()
+        clean_url = href.split("?")[0]
+        await jpage.goto(clean_url, wait_until="domcontentloaded", timeout=20000)
+        await jpage.wait_for_timeout(1000)
+        desc_el = await jpage.query_selector(".description__text, .show-more-less-html__markup")
+        description = (await desc_el.inner_text()).strip() if desc_el else ""
+        await jpage.close()
+        return description
+    except Exception as e:
+        print(f"  linkedin desc error: {e}")
+        try:
+            await jpage.close()
+        except Exception:
+            pass
+        return ""
+
 
 async def scrape_async() -> int:
     new = 0
@@ -33,61 +55,63 @@ async def scrape_async() -> int:
                     await page.wait_for_timeout(800)
 
                 cards = await page.query_selector_all(".base-card")
+
+                # Collect card metadata first
+                card_data = []
                 for card in cards:
                     try:
                         title_el   = await card.query_selector(".base-search-card__title")
                         company_el = await card.query_selector(".base-search-card__subtitle")
                         loc_el     = await card.query_selector(".job-search-card__location")
                         link_el    = await card.query_selector("a.base-card__full-link")
+                        date_el    = await card.query_selector("time[datetime]")
 
-                        title   = (await title_el.inner_text()).strip()   if title_el   else ""
-                        company = (await company_el.inner_text()).strip() if company_el else ""
-                        location= (await loc_el.inner_text()).strip()     if loc_el     else "Germany"
-                        href    = await link_el.get_attribute("href")     if link_el    else ""
+                        title    = (await title_el.inner_text()).strip()   if title_el   else ""
+                        company  = (await company_el.inner_text()).strip() if company_el else ""
+                        location = (await loc_el.inner_text()).strip()     if loc_el     else "Germany"
+                        href     = await link_el.get_attribute("href")     if link_el    else ""
+                        posted   = (await date_el.get_attribute("datetime") or "")[:10] if date_el else ""
 
-                        # Grab posted date from the card — more reliable than job detail page
-                        date_el = await card.query_selector("time[datetime]")
-                        posted  = (await date_el.get_attribute("datetime") or "")[:10] if date_el else ""
-
-                        if not title:
+                        if not title or not href:
                             continue
 
-                        slug = make_slug("linkedin", href or title + company)
+                        slug = make_slug("linkedin", href)
                         if job_exists(slug):
                             continue
 
-                        # Fetch description from the public job page (no login needed)
-                        description = ""
-                        if href:
-                            try:
-                                jpage = await ctx.new_page()
-                                clean_url = href.split("?")[0]
-                                await jpage.goto(clean_url, wait_until="domcontentloaded", timeout=20000)
-                                await jpage.wait_for_timeout(1500)
-                                desc_el = await jpage.query_selector(".description__text, .show-more-less-html__markup")
-                                if desc_el:
-                                    description = (await desc_el.inner_text()).strip()
-                                await jpage.close()
-                            except Exception as e:
-                                print(f"  linkedin desc error: {e}")
-
-                        insert_job({
-                            "slug": slug,
-                            "title": title,
-                            "company": company,
-                            "location": location,
-                            "remote": 1 if "remote" in location.lower() else 0,
-                            "url": href.split("?")[0] if href else "",
-                            "source": "linkedin",
-                            "posted": posted,
-                            "salary": "",
-                            "description": description,
+                        card_data.append({
+                            "slug": slug, "title": title, "company": company,
+                            "location": location, "href": href, "posted": posted,
                         })
-                        new += 1
                     except Exception as e:
                         print(f"  linkedin card error: {e}")
 
                 await page.close()
+
+                # Fetch descriptions in parallel batches
+                sem = asyncio.Semaphore(CONCURRENCY)
+
+                async def fetch_with_sem(job):
+                    async with sem:
+                        return await _fetch_job_detail(ctx, job["href"])
+
+                descriptions = await asyncio.gather(*[fetch_with_sem(j) for j in card_data])
+
+                for job, description in zip(card_data, descriptions):
+                    insert_job({
+                        "slug": job["slug"],
+                        "title": job["title"],
+                        "company": job["company"],
+                        "location": job["location"],
+                        "remote": 1 if "remote" in job["location"].lower() else 0,
+                        "url": job["href"].split("?")[0],
+                        "source": "linkedin",
+                        "posted": job["posted"],
+                        "salary": "",
+                        "description": description,
+                    })
+                    new += 1
+
                 await asyncio.sleep(2)
             except Exception as e:
                 print(f"  linkedin error [{keyword}]: {e}")
@@ -95,8 +119,10 @@ async def scrape_async() -> int:
         await browser.close()
     return new
 
+
 def scrape() -> int:
     return asyncio.run(scrape_async())
+
 
 if __name__ == "__main__":
     from db import init_db
