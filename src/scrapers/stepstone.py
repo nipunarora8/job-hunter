@@ -54,8 +54,10 @@ async def scrape_async() -> int:
                             if not title or not href:
                                 continue
 
-                            full_url = f"https://www.stepstone.de{href}" if href.startswith("/") else href
-                            slug = make_slug("stepstone", href)
+                            raw_url = f"https://www.stepstone.de{href}" if href.startswith("/") else href
+                            # Strip -inline.html suffix — causes redirect race on first open
+                            full_url = raw_url.replace("-inline.html", ".html")
+                            slug = make_slug("stepstone", full_url)
                             if job_exists(slug):
                                 continue
 

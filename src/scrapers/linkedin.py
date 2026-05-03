@@ -52,19 +52,20 @@ async def scrape_async() -> int:
                         if job_exists(slug):
                             continue
 
-                        # Click card to load description in the side panel
+                        # Fetch description from the public job page (no login needed)
                         description = ""
-                        try:
-                            await card.click()
-                            await page.wait_for_timeout(2000)
-                            # Try side panel first (search results page)
-                            desc_el = await page.query_selector(".job-details-jobs-unified-top-card__job-insight, .description__text, .show-more-less-html__markup")
-                            if not desc_el:
-                                desc_el = await page.query_selector("[class*='description']")
-                            if desc_el:
-                                description = (await desc_el.inner_text()).strip()
-                        except Exception as e:
-                            print(f"  linkedin desc error: {e}")
+                        if href:
+                            try:
+                                jpage = await ctx.new_page()
+                                clean_url = href.split("?")[0]
+                                await jpage.goto(clean_url, wait_until="domcontentloaded", timeout=20000)
+                                await jpage.wait_for_timeout(1500)
+                                desc_el = await jpage.query_selector(".description__text, .show-more-less-html__markup")
+                                if desc_el:
+                                    description = (await desc_el.inner_text()).strip()
+                                await jpage.close()
+                            except Exception as e:
+                                print(f"  linkedin desc error: {e}")
 
                         insert_job({
                             "slug": slug,
