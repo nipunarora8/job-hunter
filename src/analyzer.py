@@ -2,6 +2,7 @@ import json
 import re
 import httpx
 import config
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from db import get_pending_analysis, save_analysis, delete_job
 
 _job_types_str = ", ".join(config.JOB_TYPES)
@@ -81,39 +82,42 @@ def analyze_job(job: dict) -> dict | None:
         print(f"  analyzer error [{job['slug'][:8]}]: {e}")
         return None
 
-def run_analysis(limit=50):
+def _process(job: dict) -> str:
+    result = analyze_job(job)
+    if not result:
+        return "error"
+    german_required = result.get("german_required")
+    score = int(result.get("relevance_score", 0))
+    job_type = result.get("job_type", "unknown")
+    type_mismatch = job_type != "unknown" and job_type not in config.JOB_TYPES
+    if german_required is True or score < config.MIN_RELEVANCE_SCORE or type_mismatch:
+        delete_job(job["slug"])
+        return "discard"
+    save_analysis(
+        slug=job["slug"],
+        german_required=1 if german_required is True else (0 if german_required is False else None),
+        relevance_score=score,
+        matched_skills=", ".join(result.get("matched_skills", [])),
+        reasoning=result.get("reasoning", ""),
+    )
+    return "keep"
+
+def run_analysis(limit=50, workers=10):
     jobs = get_pending_analysis(limit)
     if not jobs:
         return
-    print(f"Analyzing {len(jobs)} jobs...")
+    print(f"Analyzing {len(jobs)} jobs ({workers} parallel)...")
     kept = discarded = errors = 0
-    for job in jobs:
-        result = analyze_job(job)
-        if not result:
-            errors += 1
-            continue
-        german_required = result.get("german_required")
-        score = int(result.get("relevance_score", 0))
-        job_type = result.get("job_type", "unknown")
-
-        # Discard if wrong job type (only when clearly identified — unknown passes through)
-        type_mismatch = (
-            job_type != "unknown"
-            and job_type not in config.JOB_TYPES
-        )
-
-        if german_required is True or score < config.MIN_RELEVANCE_SCORE or type_mismatch:
-            delete_job(job["slug"])
-            discarded += 1
-            continue
-        save_analysis(
-            slug=job["slug"],
-            german_required=1 if german_required is True else (0 if german_required is False else None),
-            relevance_score=score,
-            matched_skills=", ".join(result.get("matched_skills", [])),
-            reasoning=result.get("reasoning", ""),
-        )
-        kept += 1
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(_process, job): job for job in jobs}
+        for future in as_completed(futures):
+            outcome = future.result()
+            if outcome == "keep":
+                kept += 1
+            elif outcome == "discard":
+                discarded += 1
+            else:
+                errors += 1
     print(f"Analysis done: {kept} kept, {discarded} discarded, {errors} errors")
 
 if __name__ == "__main__":
