@@ -1,16 +1,16 @@
 # Job Hunter
 
-A self-hosted job scraper and dashboard for finding English-friendly tech jobs in Germany. Scrapes multiple job boards daily, uses an LLM to score relevance against your profile, and serves a clean dashboard to browse and track applications.
-
-![Dashboard](https://i.imgur.com/placeholder.png)
+A self-hosted job scraper and dashboard for finding English-friendly tech jobs in Germany. Scrapes multiple job boards daily, uses a free LLM to score relevance against your profile, and serves a clean dashboard to browse and track applications.
 
 ## Features
 
-- Scrapes **Arbeitnow**, **Bundesagentur**, **LinkedIn**, **StepStone**
-- LLM-powered relevance scoring (1–10) against your profile
-- Auto-detects German language requirements and filters them out
-- Filter by category (AI / Robotics / Software), source, date, score, seniority
+- Scrapes **Arbeitnow**, **Bundesagentur**, **LinkedIn**, **StepStone** in parallel
+- LLM-powered relevance scoring (1–10) against your profile via [OpenRouter](https://openrouter.ai) (free tier)
+- Auto-detects and filters out German language requirements
+- Filter by category (AI / ML, Robotics, Software), source, date, score, seniority
 - Track application status: New → Saved → Applied
+- Paginated job list — no memory issues with large result sets
+- Click "Pending Analysis" to see what's queued for analysis
 - Daily auto-scrape at 8am + manual trigger from dashboard
 - Single command to start everything
 
@@ -27,7 +27,7 @@ Copy the env template and add your OpenRouter API key (free at [openrouter.ai](h
 
 ```bash
 cp .env.example .env
-# edit .env and set OPENROUTER_API_KEY=...
+# edit .env and set OPENROUTER_API_KEY=your_key_here
 ```
 
 Edit `user_config.yaml` to set your profile, search keywords, and preferred model.
@@ -38,7 +38,7 @@ Edit `user_config.yaml` to set your profile, search keywords, and preferred mode
 ./setup.sh
 ```
 
-This installs all Python dependencies and the Chromium browser for scraping.
+Installs all Python dependencies and the Chromium browser for scraping.
 
 ### 3. Run
 
@@ -55,7 +55,7 @@ All user-facing settings live in `user_config.yaml`:
 | Field | Description |
 |---|---|
 | `openrouter_model` | LLM model for analysis. Use a `:free` model to stay on the free tier. |
-| `min_relevance_score` | Jobs scoring below this (1–10) are discarded. |
+| `min_relevance_score` | Jobs scoring below this (1–10) are discarded. Default: 4 |
 | `search_keywords` | Keywords sent to each job board. |
 | `profile` | Your skills/experience summary — used by the LLM to score jobs. |
 
@@ -86,7 +86,7 @@ job-hunter/
     ├── api.py         # FastAPI backend
     ├── db.py          # SQLite helpers
     ├── analyzer.py    # LLM scoring
-    ├── scheduler.py   # daily scrape job
+    ├── scheduler.py   # parallel scraping + analysis loop
     ├── config.py      # loads user_config.yaml + .env
     ├── scrapers/      # one file per job board
     └── frontend/      # Alpine.js dashboard (no build step)
@@ -97,3 +97,7 @@ job-hunter/
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv)
 - An [OpenRouter](https://openrouter.ai) API key (free tier works)
+
+## License
+
+MIT
