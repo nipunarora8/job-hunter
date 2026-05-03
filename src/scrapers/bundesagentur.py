@@ -1,22 +1,37 @@
+import re
 import httpx
 from scrapers import make_slug
 from db import insert_job, job_exists
 from config import SEARCH_KEYWORDS
 
 BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
+DETAIL_BASE = "https://www.arbeitsagentur.de/jobsuche/jobdetail"
 HEADERS = {
     "X-API-Key": "jobboerse-jobsuche",
-    "User-Agent": "Mozilla/5.0",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
 }
+
+_BA_COPYTEXT = re.compile(r'class="ba-copytext[^"]*"[^>]*>(.*?)</(?:div|section)', re.DOTALL)
+
+def _fetch_description(client: httpx.Client, refnr: str) -> str:
+    try:
+        r = client.get(f"{DETAIL_BASE}/{refnr}", timeout=15)
+        match = _BA_COPYTEXT.search(r.text)
+        if match:
+            # Strip HTML tags
+            return re.sub(r"<[^>]+>", " ", match.group(1)).strip()
+    except Exception:
+        pass
+    return ""
 
 def scrape() -> int:
     new = 0
     seen_slugs = set()
-    with httpx.Client(timeout=15, verify=False) as client:
+    with httpx.Client(timeout=15, verify=False, headers=HEADERS) as client:
         for keyword in SEARCH_KEYWORDS:
             for page in range(1, 4):
                 try:
-                    r = client.get(BASE, headers=HEADERS, params={
+                    r = client.get(BASE, params={
                         "was": keyword,
                         "wo": "Deutschland",
                         "umkreis": 0,
@@ -36,17 +51,18 @@ def scrape() -> int:
                         seen_slugs.add(slug)
                         ort = j.get("arbeitsort", {})
                         location = ort.get("ort", "Germany")
+                        description = _fetch_description(client, refnr)
                         insert_job({
                             "slug": slug,
                             "title": j.get("titel", ""),
                             "company": j.get("arbeitgeber", ""),
                             "location": location,
                             "remote": 0,
-                            "url": f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{refnr}",
+                            "url": f"{DETAIL_BASE}/{refnr}",
                             "source": "bundesagentur",
                             "posted": j.get("aktuelleVeroeffentlichungsdatum", "")[:10],
                             "salary": "",
-                            "description": j.get("titel", ""),
+                            "description": description,
                         })
                         new += 1
                 except Exception as e:
