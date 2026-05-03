@@ -95,8 +95,8 @@ def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
         query += " AND source=?"
         params.append(source)
     if days:
-        # Use created_at (always set) as primary; fall back to posted where available
-        query += " AND created_at >= datetime('now', ?)"
+        # Filter on posted date when available, fall back to created_at
+        query += " AND COALESCE(NULLIF(posted,''), created_at) >= date('now', ?)"
         params.append(f"-{days} days")
     if category and category in CATEGORY_KEYWORDS:
         kws = CATEGORY_KEYWORDS[category]
