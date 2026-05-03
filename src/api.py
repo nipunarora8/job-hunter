@@ -16,8 +16,8 @@ def list_jobs(status: str = None, min_score: int = None, source: str = None,
 @app.get("/api/stats")
 def stats():
     with db.get_conn() as conn:
-        total    = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=1 AND german_required!=1").fetchone()[0]
-        new      = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='new' AND analyzed=1 AND german_required!=1").fetchone()[0]
+        total    = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=1 AND (german_required IS NULL OR german_required!=1)").fetchone()[0]
+        new      = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='new' AND analyzed=1 AND (german_required IS NULL OR german_required!=1)").fetchone()[0]
         applied  = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='applied'").fetchone()[0]
         saved    = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='saved'").fetchone()[0]
         pending  = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=0").fetchone()[0]

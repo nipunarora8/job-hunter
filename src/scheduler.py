@@ -22,7 +22,7 @@ def run_all():
             print(f"{name} FAILED: {e}")
 
     print(f"Total new: {total}")
-    run_analysis()
+    run_analysis(limit=2000)
 
 if __name__ == "__main__":
     from db import init_db
