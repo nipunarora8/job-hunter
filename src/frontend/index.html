@@ -149,6 +149,9 @@ header {
 .stat-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; }
 .stat-num { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.5px; }
 .stat-num.accent { color: var(--accent2); }
+.stat-item.clickable { cursor: pointer; transition: opacity 0.15s; }
+.stat-item.clickable:hover { opacity: 0.75; }
+.stat-item.clickable .stat-label { text-decoration: underline dotted; text-underline-offset: 3px; }
 
 /* ─── Filters ─── */
 .filters-wrap {
@@ -234,6 +237,29 @@ main {
   margin-bottom: 14px;
 }
 .list-count { font-size: 12px; color: var(--text3); font-weight: 500; }
+
+/* ─── Pagination ─── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+.page-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  background: #000;
+  color: var(--text2);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent2); }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+.page-info { font-size: 12px; color: var(--text3); padding: 0 8px; }
 
 /* ─── Grid ─── */
 .grid {
@@ -431,6 +457,57 @@ main {
 .empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
 .empty-sub { font-size: 13px; color: var(--text3); }
 
+/* ─── Modal ─── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal {
+  background: #0a0a0a;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  width: 100%; max-width: 680px;
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+}
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.modal-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.modal-close {
+  background: transparent; border: none;
+  color: var(--text3); cursor: pointer; padding: 4px;
+  display: flex; align-items: center;
+  transition: color 0.15s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { overflow-y: auto; padding: 12px 20px; flex: 1; }
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.pending-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pending-row:last-child { border-bottom: none; }
+.pending-title { font-size: 13px; color: var(--text); font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pending-company { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.pending-src { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+
 /* ─── Toast ─── */
 .toast-wrap {
   position: fixed;
@@ -489,7 +566,6 @@ main {
   .toast { max-width: 100%; }
 }
 
-/* Spin animation for scraper button */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; }
 </style>
@@ -540,7 +616,7 @@ main {
     <div class="stat-label">Applied</div>
     <div class="stat-num" x-text="stats.applied ?? '—'"></div>
   </div>
-  <div class="stat-item">
+  <div class="stat-item clickable" @click="openPendingModal()" title="Click to see pending jobs">
     <div class="stat-label">Pending Analysis</div>
     <div class="stat-num" style="color:var(--text3)" x-text="stats.pending_analysis ?? '—'"></div>
   </div>
@@ -551,7 +627,7 @@ main {
   <!-- Status -->
   <div class="pill-group">
     <template x-for="s in [{k:'all',l:'All'},{k:'new',l:'New'},{k:'saved',l:'Saved'},{k:'applied',l:'Applied'}]" :key="s.k">
-      <button class="pill" :class="{active: filterStatus===s.k}" @click="filterStatus=s.k; loadJobs()" x-text="s.l"></button>
+      <button class="pill" :class="{active: filterStatus===s.k}" @click="filterStatus=s.k; goPage(1)" x-text="s.l"></button>
     </template>
   </div>
 
@@ -560,7 +636,7 @@ main {
   <!-- Category -->
   <div class="pill-group">
     <template x-for="c in [{k:'',l:'All Jobs'},{k:'ai',l:'AI / ML'},{k:'robotics',l:'Robotics'},{k:'software',l:'Software'}]" :key="c.k">
-      <button class="pill" :class="{active: filterCategory===c.k}" @click="filterCategory=c.k; loadJobs()" x-text="c.l"></button>
+      <button class="pill" :class="{active: filterCategory===c.k}" @click="filterCategory=c.k; goPage(1)" x-text="c.l"></button>
     </template>
   </div>
 
@@ -568,7 +644,7 @@ main {
 
   <!-- Source -->
   <div class="filter-select-wrap">
-    <select class="fsel" x-model="filterSource" @change="loadJobs()" style="padding-right:28px;">
+    <select class="fsel" x-model="filterSource" @change="goPage(1)" style="padding-right:28px;">
       <option value="">All Sources</option>
       <option value="arbeitnow">Arbeitnow</option>
       <option value="bundesagentur">Bundesagentur</option>
@@ -581,7 +657,7 @@ main {
 
   <!-- Date -->
   <div class="filter-select-wrap">
-    <select class="fsel" x-model="filterDays" @change="loadJobs()" style="padding-right:28px;">
+    <select class="fsel" x-model="filterDays" @change="goPage(1)" style="padding-right:28px;">
       <option value="">Any time</option>
       <option value="1">Last 24h</option>
       <option value="3">Last 3 days</option>
@@ -595,14 +671,14 @@ main {
   <!-- Min Score -->
   <div class="score-row">
     <span style="font-size:11px;color:var(--text3);white-space:nowrap;">Min score</span>
-    <input type="range" min="4" max="10" step="1" x-model="filterScore" @input="loadJobs()">
+    <input type="range" min="4" max="10" step="1" x-model="filterScore" @input="goPage(1)">
     <span class="score-badge-inline" x-text="filterScore + '+'"></span>
   </div>
 
   <div class="filter-sep"></div>
 
   <!-- Hide Senior toggle -->
-  <button class="pill" :class="{active: excludeSenior}" @click="excludeSenior=!excludeSenior; loadJobs()">
+  <button class="pill" :class="{active: excludeSenior}" @click="excludeSenior=!excludeSenior; goPage(1)">
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:3px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
     Hide Senior
   </button>
@@ -611,7 +687,7 @@ main {
 <!-- ── Main ── -->
 <main>
   <div class="list-header">
-    <span class="list-count" x-text="jobs.length + ' jobs shown'"></span>
+    <span class="list-count" x-text="totalJobs + ' jobs found · page ' + currentPage + ' of ' + totalPages"></span>
   </div>
 
   <div class="grid">
@@ -720,7 +796,59 @@ main {
       </div><!-- /card -->
     </template>
   </div><!-- /grid -->
+
+  <!-- Pagination -->
+  <div class="pagination" x-show="totalPages > 1">
+    <button class="page-btn" :disabled="currentPage <= 1" @click="goPage(currentPage - 1)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Prev
+    </button>
+    <span class="page-info" x-text="currentPage + ' / ' + totalPages"></span>
+    <button class="page-btn" :disabled="currentPage >= totalPages" @click="goPage(currentPage + 1)">
+      Next
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
 </main>
+
+<!-- ── Pending Modal ── -->
+<template x-if="showPending">
+  <div class="modal-backdrop" @click.self="showPending=false">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Pending Analysis — <span x-text="pendingTotal"></span> jobs</span>
+        <button class="modal-close" @click="showPending=false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <template x-if="pendingJobs.length === 0">
+          <div style="text-align:center;padding:40px 0;color:var(--text3);">No pending jobs — all analyzed!</div>
+        </template>
+        <template x-for="pj in pendingJobs" :key="pj.slug">
+          <div class="pending-row">
+            <span class="pending-title" x-text="pj.title"></span>
+            <span class="pending-company" x-text="pj.company"></span>
+            <span class="pending-src source-tag" :class="'src-'+pj.source" x-text="pj.source"></span>
+          </div>
+        </template>
+      </div>
+      <div class="modal-footer">
+        <span style="font-size:11px;color:var(--text3)" x-text="'Page ' + pendingPage + ' of ' + pendingTotalPages"></span>
+        <div style="display:flex;gap:8px">
+          <button class="page-btn" :disabled="pendingPage <= 1" @click="loadPending(pendingPage-1)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            Prev
+          </button>
+          <button class="page-btn" :disabled="pendingPage >= pendingTotalPages" @click="loadPending(pendingPage+1)">
+            Next
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <!-- ── Toast ── -->
 <div class="toast-wrap">
@@ -743,11 +871,20 @@ function app() {
     filterDays: '',
     filterScore: 4,
     excludeSenior: false,
+    currentPage: 1,
+    perPage: 20,
+    totalJobs: 0,
+    totalPages: 1,
     running: false,
     analyzing: false,
     toast: '',
     toastType: 'info',
     _toastTimer: null,
+    showPending: false,
+    pendingJobs: [],
+    pendingTotal: 0,
+    pendingPage: 1,
+    pendingTotalPages: 1,
 
     async init() {
       await Promise.all([this.loadJobs(), this.loadStats()]);
@@ -762,14 +899,38 @@ function app() {
       if (this.filterDays)      p.set('days', this.filterDays);
       if (this.filterCategory)  p.set('category', this.filterCategory);
       if (this.excludeSenior)   p.set('exclude_senior', 'true');
+      p.set('page', this.currentPage);
+      p.set('per_page', this.perPage);
       const res = await fetch('/api/jobs?' + p.toString());
       const data = await res.json();
-      this.jobs = data.map(j => ({ ...j, _open: false }));
+      this.jobs = data.jobs.map(j => ({ ...j, _open: false }));
+      this.totalJobs = data.total;
+      this.totalPages = Math.max(1, Math.ceil(data.total / this.perPage));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    goPage(n) {
+      this.currentPage = n;
+      this.loadJobs();
     },
 
     async loadStats() {
       const res = await fetch('/api/stats');
       this.stats = await res.json();
+    },
+
+    async openPendingModal() {
+      this.showPending = true;
+      await this.loadPending(1);
+    },
+
+    async loadPending(page = 1) {
+      this.pendingPage = page;
+      const res = await fetch(`/api/jobs/pending?page=${page}&per_page=30`);
+      const data = await res.json();
+      this.pendingJobs = data.jobs;
+      this.pendingTotal = data.total;
+      this.pendingTotalPages = Math.max(1, Math.ceil(data.total / 30));
     },
 
     async setStatus(job, status) {
@@ -798,11 +959,16 @@ function app() {
       this.analyzing = true;
       await fetch('/api/run-analysis', { method: 'POST' });
       this.showToast('Analyzing pending jobs in background…', 'info');
-      setTimeout(async () => {
-        this.analyzing = false;
-        await Promise.all([this.loadJobs(), this.loadStats()]);
-        this.showToast('Analysis complete — list refreshed.', 'ok');
-      }, 18000);
+      const poll = setInterval(async () => {
+        await this.loadStats();
+        if (this.stats.pending_analysis === 0) {
+          clearInterval(poll);
+          this.analyzing = false;
+          await this.loadJobs();
+          this.showToast('Analysis complete — list refreshed.', 'ok');
+        }
+      }, 5000);
+      setTimeout(() => { clearInterval(poll); this.analyzing = false; }, 300000);
     },
 
     showToast(msg, type = 'info') {

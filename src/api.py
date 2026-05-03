@@ -7,11 +7,6 @@ import db
 
 app = FastAPI()
 
-@app.get("/api/jobs")
-def list_jobs(status: str = None, min_score: int = None, source: str = None,
-              days: int = None, category: str = None, exclude_senior: bool = False):
-    return db.get_jobs(status=status, min_score=min_score, source=source,
-                       days=days, category=category, exclude_senior=exclude_senior)
 
 @app.get("/api/stats")
 def stats():
@@ -30,6 +25,27 @@ class StatusUpdate(BaseModel):
 def update_status(slug: str, body: StatusUpdate):
     db.update_status(slug, body.status)
     return {"ok": True}
+
+@app.get("/api/jobs/pending")
+def pending_jobs(page: int = 1, per_page: int = 30):
+    with db.get_conn() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=0").fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(
+            "SELECT slug, title, company, source, created_at FROM jobs WHERE analyzed=0 ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (per_page, offset)
+        ).fetchall()
+    return {"total": total, "page": page, "per_page": per_page, "jobs": [dict(r) for r in rows]}
+
+@app.get("/api/jobs")
+def list_jobs_paginated(status: str = None, min_score: int = None, source: str = None,
+                        days: int = None, category: str = None, exclude_senior: bool = False,
+                        page: int = 1, per_page: int = 20):
+    all_jobs = db.get_jobs(status=status, min_score=min_score, source=source,
+                           days=days, category=category, exclude_senior=exclude_senior)
+    total = len(all_jobs)
+    offset = (page - 1) * per_page
+    return {"total": total, "page": page, "per_page": per_page, "jobs": all_jobs[offset:offset+per_page]}
 
 @app.post("/api/run-analysis")
 def run_analysis_endpoint():
