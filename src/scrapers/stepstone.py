@@ -111,7 +111,7 @@ async def scrape_async() -> int:
                             "company": job["company"],
                             "location": job["location"],
                             "remote": 1 if "remote" in job["location"].lower() or "remote" in job["title"].lower() else 0,
-                            "url": job["full_url"],
+                            "url": job["inline_url"],
                             "source": "stepstone",
                             "posted": job["posted"],
                             "salary": "",
