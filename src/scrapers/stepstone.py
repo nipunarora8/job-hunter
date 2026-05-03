@@ -50,6 +50,8 @@ async def scrape_async() -> int:
                             company = (await company_el.inner_text()).strip() if company_el else ""
                             location= (await loc_el.inner_text()).strip()     if loc_el     else "Germany"
                             href    = await link_el.get_attribute("href")     if link_el    else ""
+                            date_el = await card.query_selector("time[datetime]")
+                            card_posted = (await date_el.get_attribute("datetime") or "")[:10] if date_el else ""
 
                             if not title or not href:
                                 continue
@@ -63,7 +65,6 @@ async def scrape_async() -> int:
 
                             # Fetch description with multiple selector fallbacks
                             description = ""
-                            posted = ""
                             try:
                                 jpage = await ctx.new_page()
                                 await jpage.goto(full_url, wait_until="domcontentloaded", timeout=20000)
@@ -77,13 +78,6 @@ async def scrape_async() -> int:
                                 )
                                 if desc_el:
                                     description = (await desc_el.inner_text()).strip()
-                                # Try to grab posted date
-                                date_el = await jpage.query_selector(
-                                    "[data-at='posted-date'], time[datetime], [class*='PostedDate'], [class*='posted-date']"
-                                )
-                                if date_el:
-                                    dt = await date_el.get_attribute("datetime")
-                                    posted = (dt or await date_el.inner_text()).strip()[:10]
                                 await jpage.close()
                             except:
                                 pass
@@ -96,7 +90,7 @@ async def scrape_async() -> int:
                                 "remote": 1 if "remote" in location.lower() or "remote" in title.lower() else 0,
                                 "url": full_url,
                                 "source": "stepstone",
-                                "posted": posted,
+                                "posted": card_posted,
                                 "salary": "",
                                 "description": description,
                             })
