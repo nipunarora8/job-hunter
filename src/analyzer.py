@@ -13,10 +13,15 @@ Respond with exactly this JSON structure:
 {{"german_required": true/false/null, "relevance_score": <1-10>, "matched_skills": ["skill1", "skill2"], "reasoning": "one sentence"}}
 
 Rules for german_required:
-- true: job explicitly requires German (e.g. "B2 Deutsch", "Deutschkenntnisse erforderlich", "fließend Deutsch")
-- false: English is acceptable or stated as working language
-- null: unclear, no language requirement mentioned
-- A job description written IN German does NOT mean German is required
+- true: job explicitly requires German language skills. Triggers:
+  * Any mention of "B1/B2/C1/C2 Deutsch" or "Deutschkenntnisse"
+  * "fließend Deutsch", "Deutsch in Wort und Schrift", "Deutsch...Niveau"
+  * "Deutsch und Englisch" as a requirement (bilingual requirement = German required)
+  * Working with German government / public sector clients where German is implied
+- false: English is stated as working language, or no German requirement mentioned
+- null: unclear, description is missing or too short to determine
+- IMPORTANT: A job description written IN German does NOT by itself mean German is required
+- IMPORTANT: If the JD says "Deutsch und Englisch beherrschst du fließend" → german_required = true
 
 Rules for relevance_score:
 - 8-10: strong match, most required skills align with candidate profile
