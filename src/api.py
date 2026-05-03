@@ -61,6 +61,14 @@ def list_jobs_paginated(status: str = None, min_score: int = None, source: str =
                               page=page, per_page=per_page)
     return {"total": total, "page": page, "per_page": per_page, "jobs": jobs}
 
+@app.post("/api/run-analysis")
+def run_analysis_endpoint():
+    def _run():
+        from analyzer import run_analysis
+        run_analysis(limit=500)
+    threading.Thread(target=_run, daemon=True).start()
+    return {"ok": True, "message": "Analysis started in background"}
+
 @app.post("/api/run-scraper")
 def run_scraper():
     def _run():

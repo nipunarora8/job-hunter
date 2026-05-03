@@ -38,7 +38,15 @@ def job_exists(slug: str) -> bool:
         return row is not None
 
 def insert_job(job: dict):
+    title = job.get("title", "")
+    company = job.get("company", "")
     with get_conn() as conn:
+        existing = conn.execute(
+            "SELECT 1 FROM jobs WHERE slug=? OR (lower(title)=lower(?) AND lower(company)=lower(?))",
+            (job["slug"], title, company)
+        ).fetchone()
+        if existing:
+            return
         conn.execute("""
             INSERT OR IGNORE INTO jobs
             (slug, title, company, location, remote, url, source, posted, salary, description)
