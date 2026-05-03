@@ -11,4 +11,5 @@ dependencies = [
     "aiohttp",
     "feedparser",
     "python-dotenv",
+    "pyyaml",
 ]
