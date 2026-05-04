@@ -4,7 +4,7 @@ import config
 from typing import Literal
 from pydantic import BaseModel, Field, ValidationError
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from db import get_pending_analysis, save_analysis, delete_job
+from db import get_pending_analysis, save_analysis, reject_job
 
 
 class JobAnalysis(BaseModel):
@@ -105,7 +105,7 @@ def analyze_job(job: dict) -> JobAnalysis | None:
 def _process(job: dict) -> str:
     result = analyze_job(job)
     if result is None:
-        delete_job(job["slug"])
+        reject_job(job["slug"])
         return "error"
 
     type_mismatch = (
@@ -114,7 +114,7 @@ def _process(job: dict) -> str:
     )
 
     if result.german_required is True or result.relevance_score < config.MIN_RELEVANCE_SCORE or type_mismatch:
-        delete_job(job["slug"])
+        reject_job(job["slug"])
         return "discard"
 
     save_analysis(

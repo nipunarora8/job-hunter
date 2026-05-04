@@ -71,9 +71,11 @@ def save_analysis(slug: str, german_required, relevance_score: int, matched_skil
         """, (german_required, relevance_score, matched_skills, reasoning, slug))
         conn.commit()
 
-def delete_job(slug: str):
+def reject_job(slug: str):
     with get_conn() as conn:
-        conn.execute("DELETE FROM jobs WHERE slug=?", (slug,))
+        conn.execute(
+            "UPDATE jobs SET analyzed=1, status='rejected' WHERE slug=?", (slug,)
+        )
         conn.commit()
 
 CATEGORY_KEYWORDS = {
@@ -91,7 +93,7 @@ SENIOR_KEYWORDS = ["senior", "lead", "principal", "head of", "director", "vp ", 
 
 def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
              exclude_senior=False, page=1, per_page=20) -> tuple[int, list]:
-    base = "WHERE analyzed=1 AND (german_required IS NULL OR german_required != 1)"
+    base = "WHERE analyzed=1 AND status != 'rejected' AND (german_required IS NULL OR german_required != 1)"
     params = []
     if status:
         base += " AND status=?"
