@@ -616,6 +616,10 @@ main {
     <div class="stat-label">Applied</div>
     <div class="stat-num" x-text="stats.applied ?? '—'"></div>
   </div>
+  <div class="stat-item">
+    <div class="stat-label">Rejected</div>
+    <div class="stat-num" style="color:var(--text3)" x-text="stats.rejected ?? '—'"></div>
+  </div>
   <div class="stat-item clickable" @click="openPendingModal()" title="Click to see pending jobs">
     <div class="stat-label">Pending Analysis</div>
     <div class="stat-num" style="color:var(--text3)" x-text="stats.pending_analysis ?? '—'"></div>

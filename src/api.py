@@ -26,12 +26,13 @@ _analyzer_thread.start()
 @app.get("/api/stats")
 def stats():
     with db.get_conn() as conn:
-        total    = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=1 AND (german_required IS NULL OR german_required!=1)").fetchone()[0]
+        total    = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=1 AND status!='rejected' AND (german_required IS NULL OR german_required!=1)").fetchone()[0]
         new      = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='new' AND analyzed=1 AND (german_required IS NULL OR german_required!=1)").fetchone()[0]
         applied  = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='applied'").fetchone()[0]
         saved    = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='saved'").fetchone()[0]
+        rejected = conn.execute("SELECT COUNT(*) FROM jobs WHERE status='rejected'").fetchone()[0]
         pending  = conn.execute("SELECT COUNT(*) FROM jobs WHERE analyzed=0").fetchone()[0]
-    return {"total": total, "new": new, "applied": applied, "saved": saved, "pending_analysis": pending}
+    return {"total": total, "new": new, "applied": applied, "saved": saved, "rejected": rejected, "pending_analysis": pending}
 
 class StatusUpdate(BaseModel):
     status: str
