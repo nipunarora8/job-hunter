@@ -1,8 +1,33 @@
 import asyncio
+import re
+from datetime import date, timedelta
 from playwright.async_api import async_playwright, BrowserContext
 from scrapers import make_slug
 from db import insert_job, job_exists
 from config import SEARCH_KEYWORDS
+
+
+def _parse_xing_date(text: str) -> str:
+    """Convert Xing relative date strings to YYYY-MM-DD. Returns '' if unparseable."""
+    text = text.strip().lower().split("\n")[0]
+    today = date.today()
+    if not text or text == "heute":
+        return today.isoformat()
+    if text == "gestern":
+        return (today - timedelta(days=1)).isoformat()
+    m = re.search(r"vor\s+(\d+)\s+stunde", text)
+    if m:
+        return today.isoformat()
+    m = re.search(r"vor\s+(\d+)\s+tag", text)
+    if m:
+        return (today - timedelta(days=int(m.group(1)))).isoformat()
+    m = re.search(r"vor\s+(\d+)\s+woche", text)
+    if m:
+        return (today - timedelta(weeks=int(m.group(1)))).isoformat()
+    m = re.search(r"vor\s+(\d+)\s+monat", text)
+    if m:
+        return (today - timedelta(days=int(m.group(1)) * 30)).isoformat()
+    return ""
 
 BASE = "https://www.xing.com/jobs/search"
 
@@ -69,6 +94,7 @@ async def scrape_async() -> int:
                         link_el    = await card.query_selector("a[href*='/jobs/']")
                         company_el = await card.query_selector("[class*='Company']")
                         loc_el     = await card.query_selector("[class*='location']")
+                        date_el    = await card.query_selector("[class*='meta']")
 
                         if not link_el:
                             continue
@@ -77,6 +103,7 @@ async def scrape_async() -> int:
                         title    = (await link_el.get_attribute("aria-label") or "").strip()
                         company  = (await company_el.inner_text()).strip() if company_el else ""
                         location = (await loc_el.inner_text()).strip()     if loc_el     else "Germany"
+                        posted   = _parse_xing_date(await date_el.inner_text() if date_el else "")
 
                         if not title or not href:
                             continue
@@ -89,7 +116,7 @@ async def scrape_async() -> int:
 
                         card_data.append({
                             "slug": slug, "title": title, "company": company,
-                            "location": location, "url": full_url, "posted": "",
+                            "location": location, "url": full_url, "posted": posted,
                         })
                     except Exception as e:
                         print(f"  xing card error: {e}")
