@@ -31,13 +31,18 @@ Candidate profile:
 {config.PROFILE_SUMMARY}
 
 Rules for german_required:
-- true: job explicitly requires German language skills:
-  * "B1/B2/C1/C2 Deutsch", "Deutschkenntnisse", "fließend Deutsch"
-  * "Deutsch in Wort und Schrift", "Deutsch und Englisch" as a requirement
-  * Public sector / government roles where German is implied
-- false: English is the working language, or no German requirement mentioned
+- true ONLY if the job EXPLICITLY states German is required using phrases like:
+  * "B1/B2/C1/C2 Deutsch", "Deutschkenntnisse erforderlich", "fließend Deutsch"
+  * "Deutsch in Wort und Schrift", "Deutsch ist Voraussetzung"
+  * Public sector / government roles where German is legally implied
+- false in ALL other cases, including:
+  * Job description is written in German but no language requirement is stated
+  * "German is a plus", "Deutsch von Vorteil", "Grundkenntnisse Deutsch"
+  * English is mentioned as working language
+  * No language requirement mentioned at all
 - null: description missing or too short to determine
-- A job description written IN German does NOT by itself mean German is required
+- CRITICAL: A job description written IN German does NOT mean German is required.
+  Default to false unless you see an explicit mandatory German requirement.
 
 Rules for job_type:
 - full_time: permanent full-time (Festanstellung, Vollzeit)
