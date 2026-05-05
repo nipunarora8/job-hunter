@@ -4,14 +4,16 @@ A self-hosted job scraper and dashboard for finding English-friendly tech jobs i
 
 ## Features
 
-- Scrapes **Arbeitnow**, **Bundesagentur**, **LinkedIn**, **StepStone** in parallel
+- Scrapes **Arbeitnow**, **Bundesagentur**, **Indeed**, **LinkedIn**, **StepStone**, **Xing** in parallel
 - LLM-powered relevance scoring (1–10) against your profile via [OpenRouter](https://openrouter.ai) (free tier)
 - Auto-detects and filters out German language requirements
 - Filter by category (AI / ML, Robotics, Software), source, date, score, seniority
-- Track application status: New → Saved → Applied
+- Dynamic search by job title, company, or location
+- Track and move jobs between statuses: New → Saved → Applied → Rejected
+- Browse rejected jobs and restore any back to New
 - Paginated job list — no memory issues with large result sets
 - Click "Pending Analysis" to see what's queued for analysis
-- Daily auto-scrape at 8am + manual trigger from dashboard
+- Auto-scrape at 08:00 and 20:00 daily + manual trigger from dashboard
 - Single command to start everything
 
 ## Quickstart
