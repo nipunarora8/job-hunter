@@ -25,8 +25,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# ── Start scheduler (scrapes + analyzes daily at 8am, runs once on startup) ──
-echo -e "${YELLOW}▸ Starting scheduler (initial scrape running in background)...${NC}"
+# ── Start scheduler (scrapes daily at 08:00 and 20:00, or via Scrape button) ──
+echo -e "${YELLOW}▸ Starting scheduler...${NC}"
 uv run python src/scheduler.py > logs/scheduler.log 2>&1 &
 SCHEDULER_PID=$!
 echo -e "${GREEN}✓ Scheduler PID $SCHEDULER_PID${NC}"

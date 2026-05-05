@@ -41,12 +41,11 @@ def run_all():
 if __name__ == "__main__":
     from db import init_db
     init_db()
-    print("Running initial scrape on startup...")
-    run_all()
 
     scheduler = BlockingScheduler()
     scheduler.add_job(run_all, CronTrigger(hour=8, minute=0))
-    print("Scheduler started — will run daily at 08:00")
+    scheduler.add_job(run_all, CronTrigger(hour=20, minute=0))
+    print("Scheduler started — will scrape daily at 08:00 and 20:00")
     try:
         scheduler.start()
     except KeyboardInterrupt:
