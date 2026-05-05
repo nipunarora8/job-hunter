@@ -93,10 +93,14 @@ SENIOR_KEYWORDS = ["senior", "lead", "principal", "head of", "director", "vp ", 
 
 def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
              exclude_senior=False, search=None, page=1, per_page=20) -> tuple[int, list]:
-    base = "WHERE analyzed=1 AND status != 'rejected' AND (german_required IS NULL OR german_required != 1)"
+    if status == 'rejected':
+        base = "WHERE status='rejected'"
+    else:
+        base = "WHERE analyzed=1 AND status != 'rejected' AND (german_required IS NULL OR german_required != 1)"
+        if status:
+            base += " AND status=?"
     params = []
-    if status:
-        base += " AND status=?"
+    if status and status != 'rejected':
         params.append(status)
     if min_score:
         base += " AND relevance_score>=?"

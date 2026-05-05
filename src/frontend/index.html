@@ -462,6 +462,8 @@ main {
 .act-save:hover   { background: #111; }
 .act-reject { background: #000; border-color: #4a1a1a; color: #f87171; }
 .act-reject:hover { background: #140a0a; }
+.act-restore { background: #000; border-color: #1a3a1a; color: #86efac; }
+.act-restore:hover { background: #0a140a; }
 
 /* ─── Empty State ─── */
 .empty {
@@ -651,7 +653,7 @@ main {
 <div class="filters-wrap">
   <!-- Status -->
   <div class="pill-group">
-    <template x-for="s in [{k:'all',l:'All'},{k:'new',l:'New'},{k:'saved',l:'Saved'},{k:'applied',l:'Applied'}]" :key="s.k">
+    <template x-for="s in [{k:'all',l:'All'},{k:'new',l:'New'},{k:'saved',l:'Saved'},{k:'applied',l:'Applied'},{k:'rejected',l:'Rejected'}]" :key="s.k">
       <button class="pill" :class="{active: filterStatus===s.k}" @click="filterStatus=s.k; goPage(1)" x-text="s.l"></button>
     </template>
   </div>
@@ -799,22 +801,34 @@ main {
 
           <!-- Actions -->
           <div class="card-actions">
-            <button class="act-btn act-apply" @click.stop="applyJob(job)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Mark Applied</span>
-            </button>
             <button class="act-btn act-link" @click.stop="window.open(job.url,'_blank')" x-show="job.url">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               <span>Open Link</span>
             </button>
-            <button class="act-btn act-save" @click.stop="setStatus(job,'saved')">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-              <span>Save</span>
-            </button>
-            <button class="act-btn act-reject" @click.stop="setStatus(job,'rejected')">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              <span>Reject</span>
-            </button>
+            <template x-if="job.status !== 'applied'">
+              <button class="act-btn act-apply" @click.stop="applyJob(job)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mark Applied</span>
+              </button>
+            </template>
+            <template x-if="job.status !== 'saved' && job.status !== 'applied'">
+              <button class="act-btn act-save" @click.stop="setStatus(job,'saved')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span>Save</span>
+              </button>
+            </template>
+            <template x-if="job.status !== 'rejected'">
+              <button class="act-btn act-reject" @click.stop="setStatus(job,'rejected')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span>Reject</span>
+              </button>
+            </template>
+            <template x-if="job.status !== 'new'">
+              <button class="act-btn act-restore" @click.stop="setStatus(job,'new')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+                <span>Restore</span>
+              </button>
+            </template>
           </div>
 
         </div><!-- /card-inner -->
@@ -992,8 +1006,7 @@ function app() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      this.jobs = this.jobs.filter(j => j.slug !== job.slug);
-      await this.loadStats();
+      await Promise.all([this.loadJobs(), this.loadStats()]);
     },
 
     async applyJob(job) {
