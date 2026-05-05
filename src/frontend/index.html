@@ -83,6 +83,22 @@ header {
 
 .header-right { display: flex; align-items: center; gap: 8px; }
 
+/* ─── Search ─── */
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-icon { position: absolute; left: 9px; color: var(--text3); pointer-events: none; }
+.search-input {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-size: 13px; padding: 6px 28px 6px 28px;
+  width: 220px; outline: none; transition: border-color 0.15s, width 0.2s;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--accent); width: 280px; }
+.search-clear {
+  position: absolute; right: 7px; background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 11px; padding: 2px 4px; line-height: 1;
+}
+.search-clear:hover { color: var(--text); }
+
 /* ─── Buttons ─── */
 .btn-ghost {
   display: inline-flex; align-items: center; gap: 6px;
@@ -580,6 +596,11 @@ main {
   </div>
 
   <div class="header-right">
+    <div class="search-wrap">
+      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="Search jobs or companies…" x-model="searchQuery" @input="debouncedSearch()">
+      <button class="search-clear" x-show="searchQuery" @click="searchQuery=''; goPage(1)">✕</button>
+    </div>
     <button class="btn-ghost" :disabled="analyzing" @click="runAnalysis()" title="Analyze pending jobs">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="{'spinning': analyzing}">
         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
@@ -879,6 +900,8 @@ function app() {
     perPage: 20,
     totalJobs: 0,
     totalPages: 1,
+    searchQuery: '',
+    _searchTimer: null,
     running: false,
     analyzing: false,
     toast: '',
@@ -903,6 +926,7 @@ function app() {
       if (this.filterDays)      p.set('days', this.filterDays);
       if (this.filterCategory)  p.set('category', this.filterCategory);
       if (this.excludeSenior)   p.set('exclude_senior', 'true');
+      if (this.searchQuery.trim()) p.set('search', this.searchQuery.trim());
       p.set('page', this.currentPage);
       p.set('per_page', this.perPage);
       const res = await fetch('/api/jobs?' + p.toString());
@@ -916,6 +940,11 @@ function app() {
     goPage(n) {
       this.currentPage = n;
       this.loadJobs();
+    },
+
+    debouncedSearch() {
+      clearTimeout(this._searchTimer);
+      this._searchTimer = setTimeout(() => this.goPage(1), 250);
     },
 
     relativeDate(dateStr) {

@@ -92,7 +92,7 @@ SENIOR_KEYWORDS = ["senior", "lead", "principal", "head of", "director", "vp ", 
                    "architect", "manager", "chief", "sr.", "sr "]
 
 def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
-             exclude_senior=False, page=1, per_page=20) -> tuple[int, list]:
+             exclude_senior=False, search=None, page=1, per_page=20) -> tuple[int, list]:
     base = "WHERE analyzed=1 AND status != 'rejected' AND (german_required IS NULL OR german_required != 1)"
     params = []
     if status:
@@ -116,6 +116,10 @@ def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
         for kw in SENIOR_KEYWORDS:
             base += " AND lower(title) NOT LIKE ?"
             params.append(f"%{kw}%")
+    if search:
+        term = f"%{search.lower()}%"
+        base += " AND (lower(title) LIKE ? OR lower(company) LIKE ?)"
+        params.extend([term, term])
 
     with get_conn() as conn:
         total = conn.execute(f"SELECT COUNT(*) FROM jobs {base}", params).fetchone()[0]

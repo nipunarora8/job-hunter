@@ -56,10 +56,10 @@ def pending_jobs(page: int = 1, per_page: int = 30):
 @app.get("/api/jobs")
 def list_jobs_paginated(status: str = None, min_score: int = None, source: str = None,
                         days: int = None, category: str = None, exclude_senior: bool = False,
-                        page: int = 1, per_page: int = 20):
+                        search: str = None, page: int = 1, per_page: int = 20):
     total, jobs = db.get_jobs(status=status, min_score=min_score, source=source,
                               days=days, category=category, exclude_senior=exclude_senior,
-                              page=page, per_page=per_page)
+                              search=search, page=page, per_page=per_page)
     return {"total": total, "page": page, "per_page": per_page, "jobs": jobs}
 
 @app.post("/api/run-analysis")
