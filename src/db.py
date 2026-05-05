@@ -122,8 +122,8 @@ def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
             params.append(f"%{kw}%")
     if search:
         term = f"%{search.lower()}%"
-        base += " AND (lower(title) LIKE ? OR lower(company) LIKE ?)"
-        params.extend([term, term])
+        base += " AND (lower(title) LIKE ? OR lower(company) LIKE ? OR lower(location) LIKE ?)"
+        params.extend([term, term, term])
 
     with get_conn() as conn:
         total = conn.execute(f"SELECT COUNT(*) FROM jobs {base}", params).fetchone()[0]

@@ -11,6 +11,7 @@ def run_scrapers():
     from scrapers.indeed import scrape as s3
     from scrapers.linkedin import scrape as s4
     from scrapers.stepstone import scrape as s5
+    from scrapers.xing import scrape as s6
 
     scrapers = [
         ("Arbeitnow", s1),
@@ -18,10 +19,11 @@ def run_scrapers():
         ("Indeed", s3),
         ("LinkedIn", s4),
         ("StepStone", s5),
+        ("Xing", s6),
     ]
 
     print("Starting all scrapers in parallel...")
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=6) as executor:
         futures = {executor.submit(fn): name for name, fn in scrapers}
         for future in as_completed(futures):
             name = futures[future]
