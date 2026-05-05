@@ -41,13 +41,10 @@ Rules for german_required:
   * English stated as working language
   * "German is a plus / von Vorteil / Grundkenntnisse"
   * JD written in English
-  * Well-known international or research company (Google, Bosch, Siemens, SAP, BMW,
-    DLR, Max Planck, Fraunhofer, Helmholtz, any university/Universität, etc.)
-- null: JD is in German, company is unknown/small, and no language is mentioned
+- null: JD is in German, and no language is mentioned
   at all — you genuinely cannot tell. This is NOT a rejection; use it freely
   whenever true does not apply but you are uncertain.
-- Decision rule: if you are debating between true and null, always pick null.
-  Only pick true when you can quote an explicit phrase from the text.
+- Decision rule: if you are debating between true and null, pick null.
 
 Rules for job_type:
 - full_time: permanent full-time (Festanstellung, Vollzeit)
