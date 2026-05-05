@@ -34,7 +34,6 @@ Rules for german_required:
 - true: ONLY when a German language requirement is explicitly written in the text:
   * "B1/B2/C1/C2 Deutsch", "Deutschkenntnisse erforderlich", "fließend Deutsch"
   * "Deutsch in Wort und Schrift", "Deutsch ist Voraussetzung"
-  * Public sector / Behörde / government roles (implied by law)
   DO NOT infer german_required=true from context alone. A German-language JD,
   a German company name, or a customer-facing role is NOT sufficient — you need
   an explicit phrase.
@@ -42,7 +41,8 @@ Rules for german_required:
   * English stated as working language
   * "German is a plus / von Vorteil / Grundkenntnisse"
   * JD written in English
-  * Well-known international company (Google, Bosch, Siemens, SAP, BMW, etc.)
+  * Well-known international or research company (Google, Bosch, Siemens, SAP, BMW,
+    DLR, Max Planck, Fraunhofer, Helmholtz, any university/Universität, etc.)
 - null: JD is in German, company is unknown/small, and no language is mentioned
   at all — you genuinely cannot tell. This is NOT a rejection; use it freely
   whenever true does not apply but you are uncertain.
@@ -63,7 +63,7 @@ Rules for relevance_score:
 - 5-7: partial match, some relevant skills
 - 3-4: weak match, tangentially related
 - 1-2: not relevant
-- Software Engineer roles without Python or AI/ML: score <= 3"""
+- Software Engineer roles without Python: score <= 3"""
 
 
 def analyze_job(job: dict) -> JobAnalysis | None:
@@ -112,11 +112,29 @@ def analyze_job(job: dict) -> JobAnalysis | None:
     return None
 
 
+# Company name fragments that are known to be English-friendly regardless of JD language.
+# If the LLM incorrectly flags german_required=True for these, we override to None.
+_ENGLISH_FRIENDLY_COMPANIES = [
+    "max planck", "max-planck", "fraunhofer", "helmholtz", "dlr", "leibniz",
+    "dfki", "hhi", "kit ", "tum ", "lmu ", "rwth", "fau ", "tu berlin",
+    "tu münchen", "tu munich", "universität", "university", "hochschule",
+    "research center", "research centre", "forschungszentrum",
+]
+
+def _is_english_friendly(company: str) -> bool:
+    c = company.lower()
+    return any(kw in c for kw in _ENGLISH_FRIENDLY_COMPANIES)
+
+
 def _process(job: dict) -> str:
     result = analyze_job(job)
     if result is None:
         reject_job(job["slug"])
         return "error"
+
+    # Override LLM if it wrongly flags a known English-friendly institution
+    if result.german_required is True and _is_english_friendly(job.get("company", "")):
+        result.german_required = None
 
     type_mismatch = (
         result.job_type != "unknown"
