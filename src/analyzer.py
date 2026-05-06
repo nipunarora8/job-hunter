@@ -32,7 +32,7 @@ Candidate profile:
 
 Rules for german_required:
 - true: The JD explicitly states German is required — e.g. "Deutschkenntnisse erforderlich",
-  "fließend Deutsch", "Deutsch in Wort und Schrift", "Deutsch B2/C1", "German required",
+  "fließend Deutsch", "Deutsch in Wort und Schrift", "Deutsch B1/B2/C1", "German required",
   "fluent German". If you see any such phrase, you MUST return true.
 - false: German is clearly NOT required — English stated as working language,
   "German is a plus / von Vorteil", or JD is written entirely in English.
@@ -146,7 +146,7 @@ def _process(job: dict) -> str:
     return "keep"
 
 
-def run_analysis(limit=50, workers=3):
+def run_analysis(limit=50, workers=25):
     jobs = get_pending_analysis(limit)
     if not jobs:
         return
