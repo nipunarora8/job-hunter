@@ -31,20 +31,14 @@ Candidate profile:
 {config.PROFILE_SUMMARY}
 
 Rules for german_required:
-- true: ONLY when a German language requirement is explicitly written in the text:
-  * "B1/B2/C1/C2 Deutsch", "Deutschkenntnisse erforderlich", "fließend Deutsch"
-  * "Deutsch in Wort und Schrift", "Deutsch ist Voraussetzung"
-  DO NOT infer german_required=true from context alone. A German-language JD,
-  a German company name, or a customer-facing role is NOT sufficient — you need
-  an explicit phrase.
-- false: German is clearly not required:
-  * English stated as working language
-  * "German is a plus / von Vorteil / Grundkenntnisse"
-  * JD written in English
-- null: JD is in German, and no language is mentioned
-  at all — you genuinely cannot tell. This is NOT a rejection; use it freely
-  whenever true does not apply but you are uncertain.
-- Decision rule: if you are debating between true and null, pick null.
+- true: The JD explicitly states German is required — e.g. "Deutschkenntnisse erforderlich",
+  "fließend Deutsch", "Deutsch in Wort und Schrift", "Deutsch B2/C1", "German required",
+  "fluent German". If you see any such phrase, you MUST return true.
+- false: German is clearly NOT required — English stated as working language,
+  "German is a plus / von Vorteil", or JD is written entirely in English.
+- null: No language requirement is mentioned at all and you cannot tell.
+  Use null freely — it is not a rejection.
+- Decision rule: explicit phrase present → true. Clearly not needed → false. Unclear → null.
 
 Rules for job_type:
 - full_time: permanent full-time (Festanstellung, Vollzeit)
