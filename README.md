@@ -62,9 +62,13 @@ All user-facing settings live in `user_config.yaml`:
 | `search_keywords` | Keywords sent to each job board. |
 | `profile` | Your skills/experience summary — used by the LLM to score jobs. |
 
+### Recommended model
+
+- `deepseek/deepseek-v4-flash` (default — fast and very cheap)
+
 ### Free models
 
-- `openrouter/free` (default — auto-routes to available free models)
+- `openrouter/free` (auto-routes to available free models)
 - `meta-llama/llama-3.1-8b-instruct:free`
 - `mistralai/mistral-7b-instruct:free`
 

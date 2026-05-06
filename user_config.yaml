@@ -8,7 +8,7 @@
 # "openrouter/free" automatically routes to available free models.
 # You can also pin a specific free model, e.g. "meta-llama/llama-3.1-8b-instruct:free"
 # See full list: https://openrouter.ai/models?q=free
-openrouter_model: "openrouter/free"
+openrouter_model: "deepseek/deepseek-v4-flash"
 
 # Jobs with a relevance score below this are discarded entirely (1-10 scale).
 min_relevance_score: 4
@@ -21,11 +21,16 @@ job_types:
 # Keywords used to search job boards.
 search_keywords:
   - "AI Engineer"
+  - "Applied AI Engineer"
+  - "Data Scientist"
   - "Machine Learning Engineer"
+  - "AI Software Engineer"
+  - "Machine Learning Software Engineer"
+  - "Agentic AI Engineer"
+  - "GenAI Engineer"
   - "Python Developer"
   - "Computer Vision Engineer"
   - "Robotics Software Engineer"
-  - "Agentic AI Engineer"
   - "Perception Engineer"
 
 # Your profile — used by the LLM to score job relevance.
