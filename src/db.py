@@ -97,13 +97,11 @@ def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
              exclude_senior=False, search=None, page=1, per_page=20) -> tuple[int, list]:
     if status == 'rejected':
         base = "WHERE status='rejected'"
+    elif status in ('saved', 'applied'):
+        base = f"WHERE analyzed=1 AND status='{status}'"
     else:
-        base = "WHERE analyzed=1 AND status != 'rejected' AND (german_required IS NULL OR german_required != 1)"
-        if status:
-            base += " AND status=?"
+        base = "WHERE analyzed=1 AND status='new' AND (german_required IS NULL OR german_required != 1)"
     params = []
-    if status and status != 'rejected':
-        params.append(status)
     if min_score:
         base += " AND relevance_score>=?"
         params.append(min_score)

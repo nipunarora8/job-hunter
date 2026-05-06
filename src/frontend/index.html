@@ -950,7 +950,6 @@ function app() {
       this.jobs = data.jobs.map(j => ({ ...j, _open: false }));
       this.totalJobs = data.total;
       this.totalPages = Math.max(1, Math.ceil(data.total / this.perPage));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
     goPage(n) {
@@ -1008,7 +1007,19 @@ function app() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      await Promise.all([this.loadJobs(), this.loadStats()]);
+      const shouldDisappear =
+        (this.filterStatus === 'all' && (status === 'saved' || status === 'applied' || status === 'rejected')) ||
+        (this.filterStatus === 'new' && status !== 'new') ||
+        (this.filterStatus === 'saved' && status !== 'saved') ||
+        (this.filterStatus === 'applied' && status !== 'applied') ||
+        (this.filterStatus === 'rejected' && status !== 'rejected');
+      if (shouldDisappear) {
+        this.jobs = this.jobs.filter(j => j.slug !== job.slug);
+        this.totalJobs = Math.max(0, this.totalJobs - 1);
+      } else {
+        job.status = status;
+      }
+      this.loadStats();
     },
 
     async applyJob(job) {
