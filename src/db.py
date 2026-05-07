@@ -139,6 +139,25 @@ def update_status(slug: str, status: str):
         conn.execute("UPDATE jobs SET status=?, seen=1 WHERE slug=?", (status, slug))
         conn.commit()
 
+def get_empty_description_jobs(source: str = None, limit: int = 500) -> list:
+    with get_conn() as conn:
+        if source:
+            rows = conn.execute(
+                "SELECT slug, url, source FROM jobs WHERE (description='' OR description IS NULL) AND source=? LIMIT ?",
+                (source, limit)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT slug, url, source FROM jobs WHERE (description='' OR description IS NULL) LIMIT ?",
+                (limit,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+def update_description(slug: str, description: str):
+    with get_conn() as conn:
+        conn.execute("UPDATE jobs SET description=? WHERE slug=?", (description, slug))
+        conn.commit()
+
 if __name__ == "__main__":
     init_db()
     print("DB initialized OK")

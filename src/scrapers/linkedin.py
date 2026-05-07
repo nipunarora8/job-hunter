@@ -8,24 +8,36 @@ BASE = "https://www.linkedin.com/jobs/search/"
 CONCURRENCY = 5  # parallel job page loads
 
 
-async def _fetch_job_detail(ctx: BrowserContext, href: str) -> tuple[str, str]:
-    """Returns (description, posted_date). Both empty string on failure."""
-    try:
-        jpage = await ctx.new_page()
-        clean_url = href.split("?")[0]
-        await jpage.goto(clean_url, wait_until="domcontentloaded", timeout=20000)
-        await jpage.wait_for_timeout(1000)
-        desc_el = await jpage.query_selector(".description__text, .show-more-less-html__markup")
-        description = (await desc_el.inner_text()).strip() if desc_el else ""
-        await jpage.close()
-        return description
-    except Exception as e:
-        print(f"  linkedin desc error: {e}")
+async def _fetch_job_detail(ctx: BrowserContext, href: str) -> str:
+    """Returns description text, empty string on failure."""
+    clean_url = href.split("?")[0]
+    for attempt in range(2):
+        jpage = None
         try:
+            jpage = await ctx.new_page()
+            await jpage.goto(clean_url, wait_until="domcontentloaded", timeout=25000)
+            # Wait for description to appear, up to 5s
+            try:
+                await jpage.wait_for_selector(
+                    ".description__text, .show-more-less-html__markup",
+                    timeout=5000
+                )
+            except Exception:
+                pass
+            desc_el = await jpage.query_selector(".description__text, .show-more-less-html__markup")
+            description = (await desc_el.inner_text()).strip() if desc_el else ""
             await jpage.close()
-        except Exception:
-            pass
-        return ""
+            if description:
+                return description
+            # Empty — wait a bit and retry
+            await asyncio.sleep(2)
+        except Exception as e:
+            print(f"  linkedin desc error (attempt {attempt+1}): {e}")
+            try:
+                await jpage.close()
+            except Exception:
+                pass
+    return ""
 
 
 async def scrape_async() -> int:
