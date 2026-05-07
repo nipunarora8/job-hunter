@@ -15,6 +15,14 @@ HEADERS = {
 _BA_COPYTEXT = re.compile(r'class="ba-copytext[^"]*"[^>]*>(.*?)</(?:div|section)', re.DOTALL)
 _EXTERNAL_URL = re.compile(r'https://(?!(?:www\.)?arbeitsagentur)[a-zA-Z0-9][a-zA-Z0-9._-]+\.[a-zA-Z]{2,}/[a-zA-Z0-9/_%-]+')
 _STRIP_TAGS = re.compile(r"<[^>]+>")
+_NOISE_TAGS = re.compile(r'<(script|style|nav|header|footer|aside|noscript)[^>]*>.*?</\1>', re.DOTALL | re.IGNORECASE)
+
+
+def _extract_text(html: str) -> str:
+    """Remove noise tags, strip remaining HTML, collapse whitespace."""
+    html = _NOISE_TAGS.sub(" ", html)
+    text = _STRIP_TAGS.sub(" ", html)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _fetch_description(refnr: str) -> str:
@@ -25,7 +33,7 @@ def _fetch_description(refnr: str) -> str:
             # Try native ba-copytext first
             match = _BA_COPYTEXT.search(r.text)
             if match:
-                return _STRIP_TAGS.sub(" ", match.group(1)).strip()
+                return _extract_text(match.group(1))
 
             # External posting — find redirect URL and fetch that page
             ext_urls = _EXTERNAL_URL.findall(r.text)
@@ -35,9 +43,7 @@ def _fetch_description(refnr: str) -> str:
             if job_url:
                 try:
                     ext = client.get(job_url, timeout=15)
-                    # Strip all HTML tags and return plain text
-                    text = _STRIP_TAGS.sub(" ", ext.text)
-                    text = re.sub(r"\s+", " ", text).strip()
+                    text = _extract_text(ext.text)
                     return text[:5000] if len(text) > 200 else ""
                 except Exception:
                     pass
