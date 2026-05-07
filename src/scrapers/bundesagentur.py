@@ -13,15 +13,34 @@ HEADERS = {
 }
 
 _BA_COPYTEXT = re.compile(r'class="ba-copytext[^"]*"[^>]*>(.*?)</(?:div|section)', re.DOTALL)
+_EXTERNAL_URL = re.compile(r'https://(?!(?:www\.)?arbeitsagentur)[a-zA-Z0-9][a-zA-Z0-9._-]+\.[a-zA-Z]{2,}/[a-zA-Z0-9/_%-]+')
+_STRIP_TAGS = re.compile(r"<[^>]+>")
 
 
 def _fetch_description(refnr: str) -> str:
     try:
-        with httpx.Client(timeout=15, verify=False, headers=HEADERS) as client:
+        with httpx.Client(timeout=15, verify=False, headers=HEADERS, follow_redirects=True) as client:
             r = client.get(f"{DETAIL_BASE}/{refnr}")
+
+            # Try native ba-copytext first
             match = _BA_COPYTEXT.search(r.text)
             if match:
-                return re.sub(r"<[^>]+>", " ", match.group(1)).strip()
+                return _STRIP_TAGS.sub(" ", match.group(1)).strip()
+
+            # External posting — find redirect URL and fetch that page
+            ext_urls = _EXTERNAL_URL.findall(r.text)
+            # Filter out CDN/font/analytics URLs
+            skip = ("fontawesome", "google", "facebook", "twitter", "linkedin", "schema.org", "w3.org")
+            job_url = next((u for u in ext_urls if not any(s in u for s in skip)), None)
+            if job_url:
+                try:
+                    ext = client.get(job_url, timeout=15)
+                    # Strip all HTML tags and return plain text
+                    text = _STRIP_TAGS.sub(" ", ext.text)
+                    text = re.sub(r"\s+", " ", text).strip()
+                    return text[:5000] if len(text) > 200 else ""
+                except Exception:
+                    pass
     except Exception:
         pass
     return ""
