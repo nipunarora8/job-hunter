@@ -1023,7 +1023,6 @@ function app() {
     },
 
     async applyJob(job) {
-      window.open(job.url, '_blank');
       await this.setStatus(job, 'applied');
     },
 
