@@ -16,5 +16,6 @@ MIN_RELEVANCE_SCORE = _cfg.get("min_relevance_score", 4)
 SEARCH_KEYWORDS     = _cfg.get("search_keywords", [])
 PROFILE_SUMMARY     = _cfg.get("profile", "").strip()
 JOB_TYPES           = _cfg.get("job_types", ["full_time"])
+EXPERIENCE_YEARS    = _cfg.get("experience_years", None)
 
 DB_PATH = os.path.join(_root, "jobs.db")

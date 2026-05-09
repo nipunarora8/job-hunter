@@ -641,6 +641,10 @@ main {
     <div class="stat-num" x-text="stats.applied ?? '—'"></div>
   </div>
   <div class="stat-item">
+    <div class="stat-label">Stretch</div>
+    <div class="stat-num" style="color:var(--accent2)" x-text="stats.stretch ?? '—'"></div>
+  </div>
+  <div class="stat-item">
     <div class="stat-label">Rejected</div>
     <div class="stat-num" style="color:var(--text3)" x-text="stats.rejected ?? '—'"></div>
   </div>
@@ -654,7 +658,7 @@ main {
 <div class="filters-wrap">
   <!-- Status -->
   <div class="pill-group">
-    <template x-for="s in [{k:'all',l:'All'},{k:'new',l:'New'},{k:'saved',l:'Saved'},{k:'applied',l:'Applied'},{k:'rejected',l:'Rejected'}]" :key="s.k">
+    <template x-for="s in [{k:'all',l:'All'},{k:'new',l:'New'},{k:'saved',l:'Saved'},{k:'applied',l:'Applied'},{k:'stretch',l:'Stretch'},{k:'rejected',l:'Rejected'}]" :key="s.k">
       <button class="pill" :class="{active: filterStatus===s.k}" @click="filterStatus=s.k; goPage(1)" x-text="s.l"></button>
     </template>
   </div>
@@ -1009,10 +1013,11 @@ function app() {
         body: JSON.stringify({ status }),
       });
       const shouldDisappear =
-        (this.filterStatus === 'all' && (status === 'saved' || status === 'applied' || status === 'rejected')) ||
+        (this.filterStatus === 'all' && (status === 'saved' || status === 'applied' || status === 'rejected' || status === 'stretch')) ||
         (this.filterStatus === 'new' && status !== 'new') ||
         (this.filterStatus === 'saved' && status !== 'saved') ||
         (this.filterStatus === 'applied' && status !== 'applied') ||
+        (this.filterStatus === 'stretch' && status !== 'stretch') ||
         (this.filterStatus === 'rejected' && status !== 'rejected');
       if (shouldDisappear) {
         this.jobs = this.jobs.filter(j => j.slug !== job.slug);

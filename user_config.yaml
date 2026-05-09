@@ -36,8 +36,12 @@ search_keywords:
 # Your profile — used by the LLM to score job relevance.
 # Write it as a short professional summary covering your skills,
 # experience, language abilities, and location preferences.
+# Your total experience in years (part-time/student).
+# <=3 yrs required → normal, 3-5 yrs → stretch tab, 5+ yrs → reject.
+experience_years: 3.8
+
 profile: |
-  AI Engineer, 3.5 years at Max Planck Institute Berlin.
+  AI Engineer, 3.8 years part-time (student job) at Max Planck Institute Berlin.
   M.Sc. Artificial Intelligence, FAU Erlangen-Nürnberg (GPA 1.7).
   Published EPJ Data Science, Springer Nature 2026.
 

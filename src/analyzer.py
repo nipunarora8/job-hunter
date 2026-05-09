@@ -17,6 +17,9 @@ class JobAnalysis(BaseModel):
         description="Short skill names from the job that match the candidate (e.g. ['PyTorch', 'ROS2']). Max 5 items."
     )
     reasoning: str = Field(description="One short sentence explaining the score.", max_length=200)
+    experience_years_required: int | None = Field(
+        description="Minimum years of experience explicitly required by the job. null if not mentioned."
+    )
 
 
 _SCHEMA = {
@@ -54,7 +57,12 @@ Rules for relevance_score:
 - 5-7: partial match, some relevant skills
 - 3-4: weak match, tangentially related
 - 1-2: not relevant
-- Software Engineer roles without Python: score <= 3"""
+- Software Engineer roles without Python: score <= 3
+
+Rules for experience_years_required:
+- Extract the minimum years of professional experience explicitly stated (e.g. "3+ years", "at least 5 years experience").
+- Return the integer (e.g. 3, 5). If a range is given (e.g. "3-5 years"), return the lower bound.
+- Return null if no experience requirement is mentioned."""
 
 
 def analyze_job(job: dict) -> JobAnalysis | None:
@@ -136,12 +144,21 @@ def _process(job: dict) -> str:
         reject_job(job["slug"])
         return "discard"
 
+    # Experience routing: <=3 yrs → new, 3-5 yrs → stretch, 5+ yrs → reject
+    exp = result.experience_years_required
+    if exp is not None and exp > 5:
+        reject_job(job["slug"])
+        return "discard"
+    status = "stretch" if (exp is not None and exp > 3) else "new"
+
     save_analysis(
         slug=job["slug"],
         german_required=1 if result.german_required is True else (0 if result.german_required is False else None),
         relevance_score=result.relevance_score,
         matched_skills=", ".join(result.matched_skills),
         reasoning=result.reasoning,
+        experience_years_required=exp,
+        status=status,
     )
     return "keep"
 

@@ -29,9 +29,15 @@ def init_db():
                 analyzed INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'new',
                 seen INTEGER DEFAULT 0,
-                created_at TEXT DEFAULT (datetime('now'))
+                created_at TEXT DEFAULT (datetime('now')),
+                experience_years_required INTEGER
             )
         """)
+        # Migrate existing DBs
+        try:
+            conn.execute("ALTER TABLE jobs ADD COLUMN experience_years_required INTEGER")
+        except Exception:
+            pass
         conn.commit()
 
 def job_exists(slug: str) -> bool:
@@ -63,14 +69,16 @@ def get_pending_analysis(limit=50) -> list:
         ).fetchall()
         return [dict(r) for r in rows]
 
-def save_analysis(slug: str, german_required, relevance_score: int, matched_skills: str, reasoning: str):
+def save_analysis(slug: str, german_required, relevance_score: int, matched_skills: str, reasoning: str,
+                  experience_years_required=None, status: str = 'new'):
     with get_conn() as conn:
         conn.execute("""
             UPDATE jobs SET
                 german_required=?, relevance_score=?, matched_skills=?,
-                reasoning=?, analyzed=1
+                reasoning=?, analyzed=1, experience_years_required=?, status=?
             WHERE slug=?
-        """, (german_required, relevance_score, matched_skills, reasoning, slug))
+        """, (german_required, relevance_score, matched_skills, reasoning,
+              experience_years_required, status, slug))
         conn.commit()
 
 def reject_job(slug: str):
@@ -97,7 +105,7 @@ def get_jobs(status=None, min_score=None, source=None, days=None, category=None,
              exclude_senior=False, search=None, page=1, per_page=20) -> tuple[int, list]:
     if status == 'rejected':
         base = "WHERE status='rejected'"
-    elif status in ('saved', 'applied'):
+    elif status in ('saved', 'applied', 'stretch'):
         base = f"WHERE analyzed=1 AND status='{status}'"
     else:
         base = "WHERE analyzed=1 AND status='new' AND (german_required IS NULL OR german_required != 1)"
